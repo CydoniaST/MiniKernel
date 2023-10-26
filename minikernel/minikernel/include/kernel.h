@@ -21,6 +21,7 @@
 #include "const.h"
 #include "HAL.h"
 #include "llamsis.h"
+#include "time.h"
 
 /*
  *
@@ -37,9 +38,11 @@ typedef struct BCP_t {
         void * pila;			/* dir. inicial de la pila */
 	BCPptr siguiente;		/* puntero a otro BCP */
 	void *info_mem;			/* descriptor del mapa de memoria */
+	
+	//supuestamente es recomendable añadir un campo "Modificar el BCP para incluir algún campo relacionado con esta llamada"
+	unsigned int tiempo_dormir; // no es en SEGUNDOS, es en TICKS
+	
 
-	//NUEVO
-	unsigned int tiempo_dormido; //Variable que informa al BCP del tiempo que va a dormir un proceso;
 } BCP;
 
 /*
@@ -54,6 +57,9 @@ typedef struct{
 	BCP *primero;
 	BCP *ultimo;
 } lista_BCPs;
+
+
+
 
 
 /*
@@ -72,7 +78,13 @@ BCP tabla_procs[MAX_PROC];
  * Variable global que representa la cola de procesos listos
  */
 lista_BCPs lista_listos= {NULL, NULL};
-lista_BCPs lista_espera= {NULL, NULL};
+
+
+//Enunciado: "Definir una lista de procesos esperando plazos"
+lista_BCPs lista_bloqueados = {NULL, NULL};
+
+
+
 /*
  *
  * Definici�n del tipo que corresponde con una entrada en la tabla de
@@ -84,12 +96,27 @@ typedef struct{
 } servicio;
 
 
+/*función para contar el tiempo
+*/
+
+int contar_ticks(int ticks);
+
 /*
  * Prototipos de las rutinas que realizan cada llamada al sistema
  */
 int sis_crear_proceso();
 int sis_terminar_proceso();
 int sis_escribir();
+
+
+/*
+Incluir la llamada que, entre otras labores, debe poner al proceso en estado
+bloqueado, reajustar las listas de BCPs correspondientes y realizar el cambio
+de contexto.
+*/
+int sis_cambios();
+
+
 
 /*
  * Variable global que contiene las rutinas que realizan cada llamada
