@@ -6,7 +6,7 @@
  *  Fernando P�rez Costoya
  *
  */
-Actualiza para github
+
 /*
  *
  * Fichero que contiene la funcionalidad del sistema operativo
@@ -64,6 +64,24 @@ static void insertar_ultimo(lista_BCPs *lista, BCP * proc){
 	proc->siguiente=NULL;
 }
 
+
+
+/*++++++++++++++++ AÑADIDA POR NOSOTROS: INSERTAR PRIMERO "insertar_primero"++++++++++++++++++*/
+static void insertar_primero(lista_BCPs *lista, BCP *proc){
+	if(lista->primero != NULL)
+		proc->siguiente = lista->primero;
+		
+	else
+		proc->siguiente = NULL;
+		lista->ultimo = proc;
+	lista->primero = proc;
+
+}
+
+
+// ↑↑ Tras un análisis, es probable que sea innecesario 
+
+
 /*
  * Elimina el primer BCP de la lista.
  */
@@ -113,6 +131,10 @@ static void espera_int(){
 	fijar_nivel_int(nivel);
 }
 
+
+
+
+
 /*
  * Funci�n de planificacion que implementa un algoritmo FIFO.
  */
@@ -156,6 +178,11 @@ static void liberar_proceso(){
  *	interrupciones del terminal: int_terminal
  *	llamadas al sistemas: llam_sis
  *	interrupciones SW: int_sw
+ *
+ * 
+ *  Añadir a la rutina de interrupción la detección de si se cumple el plazo de
+ *	algún proceso dormido. Si es así, debe cambiarle de estado y reajustar las
+ *	listas correspondientes
  *
  */
 
@@ -208,6 +235,7 @@ static void int_reloj(){
 
 	printk("-> TRATANDO INT. DE RELOJ\n");
 
+		restarTiempoBloqueados();
         return;
 }
 
@@ -235,6 +263,48 @@ static void int_sw(){
 
 	return;
 }
+
+
+
+/*Añadir a la rutina de interrupción la detección de si se cumple el plazo de
+algún proceso dormido. Si es así, debe cambiarle de estado y reajustar las
+listas correspondientes*/
+
+
+
+/*
+*************PREGUNTAR: ¿SE HACE DE ALGUNA DE LAS MANERAS QUE HEMOS PLANTEADO AL FINAL DE ESTA FUNCIÓN?
+						¿O NO ES NECESARIO EVALUARLO, PORQUE CONTAMOS CON QUE CLOCK FUNCIONE BIEN?****
+
+***ESTO ESTÁ EN PROCESO, SEGURAMENTE ESTÉ CASI ENTERO MAL */
+
+static void int_plazo(){
+
+	/* PRINCIPIO DEL INVENTO */
+	bool cumplido = false;
+	//detección de plazo cumplidof
+	//implementar esa detección, podría ser 
+
+	while(!cumplido);
+
+	//no salta hasta aquí hasta que se cumple
+
+	//CREO QUE ESTO NO ES ASI
+	p_proc_actual->estado=LISTO;
+	eliminar_elem(&lista_bloqueados,p_proc_actual);
+	insertar_ultimo(&lista_listos,p_proc_actual);
+
+	cumplido = false;
+
+	/*FIN DEL INVENTO*/
+	//COSA QUE CUADRARÍA MÁS: VER SI CONTAR_TICKS CORRESPONDE CON EL ATRIBUTO TIEMPO_DORMIR DEL PROCESO (TICKS_CONTADOS == TIEMPO_DORMIR)
+	// O SI NO, QUE DORMIR CUANDO ESTÉ COMPLETADO PONGA TIEMPO DORMIR A 0 (TIEMPO_DORMIR == 0)
+
+
+}
+
+
+
 
 /*
  *
@@ -327,18 +397,144 @@ int sis_terminar_proceso(){
         return 0; /* no deber�a llegar aqui */
 }
 
+
+/*
+Incluir la llamada que, entre otras labores, debe poner al proceso en estado
+bloqueado, reajustar las listas de BCPs correspondientes y realizar el cambio
+de contexto.
+*/
+int sis_cambios(BCPptr actual){
+
+	
+	//Cambio de contexto
+	p_proc_anterior=p_proc_actual;
+	p_proc_actual=planificador();
+
+	cambio_contexto(NULL, &(p_proc_actual->contexto_regs));
+        return; /* no debería llegar aqui */
+	
+	printk("-> C.CONTEXTO POR FIN: de %d a %d\n",
+			p_proc_anterior->id, p_proc_actual->id);
+
+	liberar_pila(p_proc_anterior->pila);
+	cambio_contexto(NULL, &(p_proc_actual->contexto_regs));
+        return; /* no debería llegar aqui */
+
+		
+
+}
+
+//CLOCK
+void contar_ticks(int ticks){
+
+	// Guardamos el valor inicial del reloj del sistema
+	clock_t inicio = clock();
+	// Calculamos el valor final del reloj del sistema que corresponde a los ticks dados
+	clock_t fin = inicio + ticks;
+	// Mientras el reloj del sistema sea menor que el valor final, seguimos esperando
+	while (clock() < fin) {
+		// No hacemos nada
+	}
+ 
+}
+
+
+/* funcion auxiliar para la llamada dormir, actualiza los tiempos de los procesos dormidos */ 
+void restarTiempoBloqueados(){ 
+ 
+	BCPptr aux = lista_bloqueados.primero; 
+
+	/* recorro la lista y actualizo los tiempos */ 
+
+	while(aux != NULL){ 
+		BCPptr siguiente = aux->siguiente; 
+		aux->tiempo_dormir--; 
+
+		if(aux->tiempo_dormir == 0){ 
+			aux->estado = LISTO; 
+			eliminar_elem(&lista_bloqueados, aux); 
+			insertar_ultimo(&lista_listos, aux); 
+	} 
+		auxiliar = siguiente; 
+	} 
+} 
+
+
+//proceso auxiliar para bloquear proceso y actualizar listas
+
+void bloquear(){
+	//poner el proceso en bloqueado
+	BCPptr actual = p_proc_actual;
+	actual->estado = BLOQUEADO;
+
+	
+
+
+	//reajustar listas de BCPs
+	//	1º: eliminar de listos
+	eliminar_elem(&lista_listos,p_proc_actual);
+
+	//	2º: añadir a bloqueados
+	insertar_ultimo(&lista_bloqueados,p_proc_actual);
+
+
+	p_proc_actual = planificador();
+
+	BCPptr actual_nuevo = p_proc_actual;
+	cambio_contexto(actual->contexto_regs,actual_nuevo->contexto_regs);
+
+}
+
+int dormir(unsigned int segundos){
+
+	//dormir llama a bloquear
+	//	-bloquear lo bloquea 
+	//	-actualiza tablas
+	//	-cambia contexto
+	//cuando pasa el tiempo   ****HAY 
+	//
+
+	
+	//poner el proceso en bloqueado
+	bloquear();
+
+	//Se multiplican los segundos por los ticks establecidos (en este caso 100)
+	actual->tiempo_dormir = segundos * TICK;
+
+
+	contar_ticks(actual->tiempo_dormir);
+
+	//cuando pasa el tiempo
+
+	//vuelve 
+
+	//nivel de interrupcion
+	//int n_interrupcion = fijar_nivel_int(NIVEL_3);
+
+
+	/*↓↓ ESTO A LO MEJOR LO TIENE QUE HACER LA NUEVA RUTINA DE INTERRUPCION Y NO DORMIR: */
+
+
+	//lo pongo en listo y bloqueo el actual 
+	//reajustar listas de BCPs
+	//	1º: eliminar de bloqueados
+	eliminar_elem(&lista_bloqueados,p_proc_actual);
+
+	//	2º: añadir a listos
+	insertar_ultimo(&lista_listos,p_proc_actual);
+
+
+}
+
+
+
+
+
 /*
  *
  * Rutina de inicializaci�n invocada en arranque
  *
  */
-
-int dormir(unsigned int seg){
-	BCPptr actual = p_proc_actual;
-
-}
-
-
 int main(){
 	/* se llega con las interrupciones prohibidas */
 
@@ -348,6 +544,10 @@ int main(){
 	instal_man_int(INT_TERMINAL, int_terminal); 
 	instal_man_int(LLAM_SIS, tratar_llamsis); 
 	instal_man_int(INT_SW, int_sw); 
+	/*Añadir a la rutina de interrupción la detección de si se cumple el plazo de
+	algún proceso dormido. Si es así, debe cambiarle de estado y reajustar las
+	listas correspondientes*/
+	instal_man_int(INT_PLAZO, int_plazo);
 
 	iniciar_cont_int();		/* inicia cont. interr. */
 	iniciar_cont_reloj(TICK);	/* fija frecuencia del reloj */
