@@ -6,7 +6,7 @@
  *  Fernando P�rez Costoya
  *
  */
-Actualizacion para github
+Actualiza para github
 /*
  *
  * Fichero que contiene la funcionalidad del sistema operativo
