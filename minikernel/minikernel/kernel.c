@@ -276,32 +276,8 @@ listas correspondientes*/
 *************PREGUNTAR: ¿SE HACE DE ALGUNA DE LAS MANERAS QUE HEMOS PLANTEADO AL FINAL DE ESTA FUNCIÓN?
 						¿O NO ES NECESARIO EVALUARLO, PORQUE CONTAMOS CON QUE CLOCK FUNCIONE BIEN?****
 
-***ESTO ESTÁ EN PROCESO, SEGURAMENTE ESTÉ CASI ENTERO MAL */
-
-static void int_plazo(){
-
-	/* PRINCIPIO DEL INVENTO */
-	bool cumplido = false;
-	//detección de plazo cumplidof
-	//implementar esa detección, podría ser 
-
-	while(!cumplido);
-
-	//no salta hasta aquí hasta que se cumple
-
-	//CREO QUE ESTO NO ES ASI
-	p_proc_actual->estado=LISTO;
-	eliminar_elem(&lista_bloqueados,p_proc_actual);
-	insertar_ultimo(&lista_listos,p_proc_actual);
-
-	cumplido = false;
-
-	/*FIN DEL INVENTO*/
-	//COSA QUE CUADRARÍA MÁS: VER SI CONTAR_TICKS CORRESPONDE CON EL ATRIBUTO TIEMPO_DORMIR DEL PROCESO (TICKS_CONTADOS == TIEMPO_DORMIR)
-	// O SI NO, QUE DORMIR CUANDO ESTÉ COMPLETADO PONGA TIEMPO DORMIR A 0 (TIEMPO_DORMIR == 0)
 
 
-}
 
 
 
@@ -424,19 +400,7 @@ int sis_cambios(BCPptr actual){
 
 }
 
-//CLOCK
-void contar_ticks(int ticks){
 
-	// Guardamos el valor inicial del reloj del sistema
-	clock_t inicio = clock();
-	// Calculamos el valor final del reloj del sistema que corresponde a los ticks dados
-	clock_t fin = inicio + ticks;
-	// Mientras el reloj del sistema sea menor que el valor final, seguimos esperando
-	while (clock() < fin) {
-		// No hacemos nada
-	}
- 
-}
 
 
 /* funcion auxiliar para la llamada dormir, actualiza los tiempos de los procesos dormidos */ 
@@ -455,7 +419,7 @@ void restarTiempoBloqueados(){
 			eliminar_elem(&lista_bloqueados, aux); 
 			insertar_ultimo(&lista_listos, aux); 
 	} 
-		auxiliar = siguiente; 
+		aux = siguiente; 
 	} 
 } 
 
@@ -463,11 +427,14 @@ void restarTiempoBloqueados(){
 //proceso auxiliar para bloquear proceso y actualizar listas
 
 void bloquear(){
-	//poner el proceso en bloqueado
-	BCPptr actual = p_proc_actual;
-	actual->estado = BLOQUEADO;
 
 	
+
+	//poner el proceso en bloqueado
+	BCPptr actual = p_proc_actual;
+
+	 
+	actual->estado = BLOQUEADO;
 
 
 	//reajustar listas de BCPs
@@ -480,8 +447,11 @@ void bloquear(){
 
 	p_proc_actual = planificador();
 
-	BCPptr actual_nuevo = p_proc_actual;
-	cambio_contexto(actual->contexto_regs,actual_nuevo->contexto_regs);
+	
+
+	//Como actual es un puntero del BCP debemos seguir rabajando con puntores en el cambio de contecto
+	//p_proc_actual sera el proceso que se va a derpertar y actual sera el que se va a bloquear y queremos dormir
+	cambio_contexto(&(actual->contexto_regs),&(p_proc_actual->contexto_regs));
 
 }
 
@@ -494,34 +464,31 @@ int dormir(unsigned int segundos){
 	//cuando pasa el tiempo   ****HAY 
 	//
 
+	//El valor pasado a la funcion se guarda en el registro 1 y utilizamos "leer_registro" para leer ese registro
+	unsigned int segundos_espera = (unsigned int)leer_registro(1);
 	
+	
+	//Se multiplican los segundos por los ticks establecidos (en este caso 100)
+	actual->tiempo_dormir = segundos_espera * TICK;
+
+	//guardamos el nivel de interrupcion
+	int n_interrupcion = fijar_nivel_int(NIVEL_3);
+
 	//poner el proceso en bloqueado
 	bloquear();
 
-	//Se multiplican los segundos por los ticks establecidos (en este caso 100)
-	actual->tiempo_dormir = segundos * TICK;
 
 
-	contar_ticks(actual->tiempo_dormir);
 
 	//cuando pasa el tiempo
 
 	//vuelve 
 
-	//nivel de interrupcion
-	//int n_interrupcion = fijar_nivel_int(NIVEL_3);
+	//Restauramos el nivel de interrupcion
+	fijar_nivel_int(n_interrupcion);
 
 
-	/*↓↓ ESTO A LO MEJOR LO TIENE QUE HACER LA NUEVA RUTINA DE INTERRUPCION Y NO DORMIR: */
 
-
-	//lo pongo en listo y bloqueo el actual 
-	//reajustar listas de BCPs
-	//	1º: eliminar de bloqueados
-	eliminar_elem(&lista_bloqueados,p_proc_actual);
-
-	//	2º: añadir a listos
-	insertar_ultimo(&lista_listos,p_proc_actual);
 
 
 }
