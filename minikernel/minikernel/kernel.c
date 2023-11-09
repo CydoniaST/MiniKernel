@@ -270,6 +270,18 @@ static void int_sw(){
 algún proceso dormido. Si es así, debe cambiarle de estado y reajustar las
 listas correspondientes*/
 
+
+
+/*
+*************PREGUNTAR: ¿SE HACE DE ALGUNA DE LAS MANERAS QUE HEMOS PLANTEADO AL FINAL DE ESTA FUNCIÓN?
+						¿O NO ES NECESARIO EVALUARLO, PORQUE CONTAMOS CON QUE CLOCK FUNCIONE BIEN?****
+
+
+
+
+
+
+
 /*
  *
  * Funcion auxiliar que crea un proceso reservando sus recursos.
@@ -389,6 +401,8 @@ int sis_cambios(BCPptr actual){
 }
 
 
+
+
 /* funcion auxiliar para la llamada dormir, actualiza los tiempos de los procesos dormidos */ 
 void restarTiempoBloqueados(){ 
  
@@ -453,6 +467,7 @@ int dormir(unsigned int segundos){
 	//El valor pasado a la funcion se guarda en el registro 1 y utilizamos "leer_registro" para leer ese registro
 	unsigned int segundos_espera = (unsigned int)leer_registro(1);
 	
+	
 	//Se multiplican los segundos por los ticks establecidos (en este caso 100)
 	actual->tiempo_dormir = segundos_espera * TICK;
 
@@ -462,6 +477,9 @@ int dormir(unsigned int segundos){
 	//poner el proceso en bloqueado
 	bloquear();
 
+
+
+
 	//cuando pasa el tiempo
 
 	//vuelve 
@@ -470,6 +488,102 @@ int dormir(unsigned int segundos){
 	fijar_nivel_int(n_interrupcion);
 
 }
+
+/*        SERVICIOS MUTEX        */
+
+
+
+/*Crear mutex:
+	-Crea el mutex con el nombre y tipo especificados. 
+	-Devuelve un entero que representa un descriptor para acceder al mutex. 
+	-En caso de error devuelve un número negativo. 
+	-Habrá que definir dos constantes, que deberían incluirse tanto en el archivo de cabecera usado por los programas 
+	de usuario (“servicios.h”) como en el usado por el sistema operativo 
+	(“kernel.h”), para facilitar la especificación del tipo de mutex 
+	(NO_RECURSIVO y RECURSIVO) */
+
+
+
+int buscar_mut_nombre(char* nombre){
+
+	for(int i = 0; i < NUM_MUT; i++){
+
+		if(strmcmp(lista_mut[i].nombre, nombre) == 0) return i; //devolver el numero de mutex
+
+	}
+
+	return -1; //Error: nombre no encontrado
+
+}
+
+
+int crear_mutex(char *nombre, int tipo){
+
+	nombre = (char*) leer_registro(1); 
+ 	tipo = (int) leer_registro(2);
+
+	int n_interrupcion = fijar_nivel_int(NIVEL_1);
+
+	if(strlen(nombre) > (MAX_NOM_MUT-1)  ){
+
+		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) ",nombre,strlen(nombre),MAX_NOM_MUT);
+		fijar_nivel_int(n_interrupcion);
+
+		return -1; //se cierra con codigo de error
+
+	}
+
+	/*Cuando se crea un mutex, el proceso obtiene el descriptor que le permite 
+acceder al mismo. Si ya existe un mutex con ese nombre o no quedan 
+descriptores libres, se devuelve un error. En caso de que no haya error, se 
+debe comprobar si se ha alcanzado el número máximo de mutex en el 
+sistema. Si esto ocurre, se debe bloquear al proceso hasta que se elimine 
+algún mutex. La operación que crea el mutex también lo deja abierto para 
+poder ser usado, devolviendo un descriptor que permita usarlo. Se recibirá 
+como parámetro de qué tipo es el mutex (recursivo o no)*/
+
+	//Si ya existe un mutex con ese nombre se devuelve un error 
+	if(buscar_mut_nombre(nombre) != -1) {
+		
+		printk("ERROR KERNEL. Nombre %s en uso.\n", nombre);
+		fijar_nivel_int(n_interrupcion);
+		return -1; // Devolvemos el error
+
+	}
+	
+
+	mutex resultado;
+	resultado->nombre; 
+	int des;
+
+
+
+
+	return des;
+}
+
+
+
+/* Devuelve un descriptor asociado a un mutex ya existente o un 
+número negativo en caso de error */
+int abrir_mutex(char *nombre){
+
+
+
+
+}
+
+
+
+
+
+int abrir_mutex(char *nombre);
+int lock(unsigned int mutexid);
+int unlock(unsigned int mutexid);
+int cerrar_mutex(unsigned int mutexid);
+
+
+
 
 
 /*
