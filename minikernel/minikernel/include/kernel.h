@@ -18,6 +18,16 @@
 #ifndef _KERNEL_H
 #define _KERNEL_H
 
+/* defines para el mutex  */
+#define NO_RECURSIVO 0
+#define RECURSIVO 1
+#define LIBRE 1
+#define OCUPADO 0
+
+#define NUM_MUT //numero de mutex
+#define MAX_NOM_MUT  //Limitamos el tamaño del nombre del mutex
+#define NUM_MUT_PROC //Limite de descriptores por proceso
+
 #include "const.h"
 #include "HAL.h"
 #include "llamsis.h"
@@ -41,6 +51,10 @@ typedef struct BCP_t {
 	
 	//supuestamente es recomendable añadir un campo "Modificar el BCP para incluir algún campo relacionado con esta llamada"
 	unsigned int tiempo_dormir; // no es en SEGUNDOS, es en TICKS
+
+
+	/*MUTEX*/
+	int conj_descriptores[NUM_MUT_PROC];
 	
 
 } BCP;
@@ -58,6 +72,25 @@ typedef struct{
 	BCP *ultimo;
 } lista_BCPs;
 
+/*
+ *mutex*/
+typedef struct MUT_t *MUTptr;
+
+typedef struct MUT_t{
+
+	char nombre[MAX_NOM_MUT];      //nombre que no excede la constante
+	int estado;                   /* LIBRE | OCUPADO */
+	int tipo;					 //Especificación del tipo RECURSIVO | NO RECURSIVO 
+
+	lista_BCPs lista_mut_espera;  // lista de procesos que esperan al mutex
+	int n_mut_espera;            // numero de procesos de mutex en espera: tamaño de la lista
+	int id_mut;					// ident. del proceso que tiene al mutex
+	int num_mut_bloqueos;	   // 
+
+
+
+
+} mutex;
 
 
 
@@ -83,6 +116,12 @@ lista_BCPs lista_listos= {NULL, NULL};
 //Enunciado: "Definir una lista de procesos esperando plazos"
 lista_BCPs lista_bloqueados = {NULL, NULL};
 
+
+//Lista de procesos esperando mutex
+lista_BCPs lista_esperando_mut = {NULL, NULL};
+
+//lista de los mutex
+mutex lista_mut[NUM_MUT];
 
 
 /*
@@ -127,3 +166,10 @@ servicio tabla_servicios[NSERVICIOS]={	{sis_crear_proceso},
 
 #endif /* _KERNEL_H */
 
+
+/*        SERVICIOS MUTEX        */
+int crear_mutex(char *nombre, int tipo);
+int abrir_mutex(char *nombre);
+int lock(unsigned int mutexid);
+int unlock(unsigned int mutexid);
+int cerrar_mutex(unsigned int mutexid);
