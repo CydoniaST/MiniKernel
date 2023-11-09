@@ -1,9 +1,9 @@
 /*
  *  usuario/include/servicios.h
  *
- *  Minikernel. Versión 1.0
+ *  Minikernel. Versiï¿½n 1.0
  *
- *  Fernando Pérez Costoya
+ *  Fernando Pï¿½rez Costoya
  *
  */
 
@@ -19,7 +19,13 @@
 #ifndef SERVICIOS_H
 #define SERVICIOS_H
 
-/* Evita el uso del printf de la bilioteca estándar */
+/* defines para el mutex  */
+#define NO_RECURSIVO 0
+#define RECURSIVO 1
+
+
+
+/* Evita el uso del printf de la bilioteca estï¿½ndar */
 #define printf escribirf
 
 /* Funcion de biblioteca */
@@ -31,4 +37,7 @@ int terminar_proceso();
 int escribir(char *texto, unsigned int longi);
 
 #endif /* SERVICIOS_H */
+
+
+
 
