@@ -270,18 +270,6 @@ static void int_sw(){
 algún proceso dormido. Si es así, debe cambiarle de estado y reajustar las
 listas correspondientes*/
 
-
-
-/*
-*************PREGUNTAR: ¿SE HACE DE ALGUNA DE LAS MANERAS QUE HEMOS PLANTEADO AL FINAL DE ESTA FUNCIÓN?
-						¿O NO ES NECESARIO EVALUARLO, PORQUE CONTAMOS CON QUE CLOCK FUNCIONE BIEN?****
-
-
-
-
-
-
-
 /*
  *
  * Funcion auxiliar que crea un proceso reservando sus recursos.
@@ -401,8 +389,6 @@ int sis_cambios(BCPptr actual){
 }
 
 
-
-
 /* funcion auxiliar para la llamada dormir, actualiza los tiempos de los procesos dormidos */ 
 void restarTiempoBloqueados(){ 
  
@@ -467,7 +453,6 @@ int dormir(unsigned int segundos){
 	//El valor pasado a la funcion se guarda en el registro 1 y utilizamos "leer_registro" para leer ese registro
 	unsigned int segundos_espera = (unsigned int)leer_registro(1);
 	
-	
 	//Se multiplican los segundos por los ticks establecidos (en este caso 100)
 	actual->tiempo_dormir = segundos_espera * TICK;
 
@@ -477,9 +462,6 @@ int dormir(unsigned int segundos){
 	//poner el proceso en bloqueado
 	bloquear();
 
-
-
-
 	//cuando pasa el tiempo
 
 	//vuelve 
@@ -487,14 +469,7 @@ int dormir(unsigned int segundos){
 	//Restauramos el nivel de interrupcion
 	fijar_nivel_int(n_interrupcion);
 
-
-
-
-
 }
-
-
-
 
 
 /*
