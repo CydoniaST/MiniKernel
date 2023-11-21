@@ -85,7 +85,7 @@ typedef struct MUT_t{
 	lista_BCPs lista_mut_espera;  // lista de procesos que esperan al mutex
 	int n_mut_espera;            // numero de procesos de mutex en espera: tamaño de la lista
 	int id_mut;					// ident. del proceso que tiene al mutex
-	int num_mut_bloqueos;	   // 
+	int num_mut_bloqueos;	   // numero de mutex bloqueados
 
 
 
@@ -122,6 +122,7 @@ lista_BCPs lista_esperando_mut = {NULL, NULL};
 
 //lista de los mutex
 mutex lista_mut[NUM_MUT];
+int num_mut_total; //tamaño de la lista: controlamos el numero de mutex que hay 
 
 
 /*
@@ -135,8 +136,8 @@ typedef struct{
 } servicio;
 
 
-/*función para contar el tiempo
-*/
+//función para contar el tiempo
+
 
 int contar_ticks(int ticks);
 
@@ -169,6 +170,13 @@ servicio tabla_servicios[NSERVICIOS]={	{sis_crear_proceso},
 
 /*        SERVICIOS MUTEX        */
 int crear_mutex(char *nombre, int tipo);
+
+//Funciones aux para crear_mutex: búsqueda por nombre y búsqueda de un hueco en el array de descriptores
+int buscar_mutex_nombre(char* nombre);
+int buscar_hueco_mutex();
+int buscar_hueco_descriptores();
+
+
 int abrir_mutex(char *nombre);
 int lock(unsigned int mutexid);
 int unlock(unsigned int mutexid);
