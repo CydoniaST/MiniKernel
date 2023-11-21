@@ -455,6 +455,7 @@ void bloquear(){
 
 }
 
+/*	FUNCION DORMIR 		*/
 int dormir(unsigned int segundos){
 
 	//dormir llama a bloquear
@@ -504,18 +505,60 @@ int dormir(unsigned int segundos){
 
 
 
-int buscar_mut_nombre(char* nombre){
 
-	for(int i = 0; i < NUM_MUT; i++){
-
-		if(strmcmp(lista_mut[i].nombre, nombre) == 0) return i; //devolver el numero de mutex
-
-	}
-
-	return -1; //Error: nombre no encontrado
-
+//funcion auxiliar a mutex: "buscar mutex por nombre", devuelve el num de mutex con ese nombre o da error
+int buscar_mut_nombre(char* nombre) {
+    int i = 0;
+    while (i < NUM_MUT) {
+        if (strcmp(lista_mut[i].nombre, nombre) == 0) {
+            return i; //devolver el numero de mutex
+        }
+        i++;
+    }
+    return -1; //Error: nombre no encontrado
 }
 
+
+
+
+	//funcion auxiliar a mutex: busca un hueco en el array de descriptores
+int buscar_hueco_descriptores() {
+    int i = 0;
+    while (i < NUM_MUT_PROC) {
+        if (p_proc_actual->conj_descriptores[i] == -1) { //significa que es un hueco
+            return i; //igual que buscando por nombre, devuelve el indice del hueco buscado
+        }
+        i++;
+    }
+    return -1; //Error: no se encuentra hueco de descriptor
+}
+
+
+
+	//funcion auxiliar a mutex: buscamos un hueco de mutex
+int buscar_hueco_mutex() { 
+    int i = 0; 
+    while (i < NUM_MUT) { 
+        if (lista_mutex[i].estado == LIBRE) { 
+            return i; /* devuelve la posicion del mutex libre */ 
+        } 
+        i++; 
+    } 
+    return -1; /* devuelve -1 si no se encuentra ningún mutex libre */
+}
+
+
+
+
+
+/*Enunciado práctica: Cuando se crea un mutex, el proceso obtiene el descriptor que le permite 
+	acceder al mismo. Si ya existe un mutex con ese nombre o no quedan 
+	descriptores libres, se devuelve un error. En caso de que no haya error, se 
+	debe comprobar si se ha alcanzado el número máximo de mutex en el 
+	sistema. Si esto ocurre, se debe bloquear al proceso hasta que se elimine 
+	algún mutex. La operación que crea el mutex también lo deja abierto para 
+	poder ser usado, devolviendo un descriptor que permita usarlo. Se recibirá 
+	como parámetro de qué tipo es el mutex (recursivo o no)*/
 
 int crear_mutex(char *nombre, int tipo){
 
@@ -524,7 +567,9 @@ int crear_mutex(char *nombre, int tipo){
 
 	int n_interrupcion = fijar_nivel_int(NIVEL_1);
 
-	if(strlen(nombre) > (MAX_NOM_MUT-1)  ){
+
+	//Comprobamos que el nombre no excede el maximo de caracteres
+	if(strlen(nombre) > (MAX_NOM_MUT-1) ) {
 
 		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) ",nombre,strlen(nombre),MAX_NOM_MUT);
 		fijar_nivel_int(n_interrupcion);
@@ -533,15 +578,7 @@ int crear_mutex(char *nombre, int tipo){
 
 	}
 
-	/*Cuando se crea un mutex, el proceso obtiene el descriptor que le permite 
-acceder al mismo. Si ya existe un mutex con ese nombre o no quedan 
-descriptores libres, se devuelve un error. En caso de que no haya error, se 
-debe comprobar si se ha alcanzado el número máximo de mutex en el 
-sistema. Si esto ocurre, se debe bloquear al proceso hasta que se elimine 
-algún mutex. La operación que crea el mutex también lo deja abierto para 
-poder ser usado, devolviendo un descriptor que permita usarlo. Se recibirá 
-como parámetro de qué tipo es el mutex (recursivo o no)*/
-
+	
 	//Si ya existe un mutex con ese nombre se devuelve un error 
 	if(buscar_mut_nombre(nombre) != -1) {
 		
@@ -551,15 +588,66 @@ como parámetro de qué tipo es el mutex (recursivo o no)*/
 
 	}
 	
+	int descriptor_resultado = buscar_hueco_descriptores(); //almacenamos el resultado de buscar hueco para no llamar otra vez a la funcion en el if
 
-	mutex resultado;
-	resultado->nombre; 
-	int des;
+	if( descriptor_resultado == -1){ //Control de erorr: si no nos da un hueco sale de la funcion
+ 
+		printk("ERROR KERNEL. No hay hueco de descriptor.\n");
+		fijar_nivel_int(n_interrupcion);
+		return -1; // Devolvemos el error
+
+	} 
+
+
+	int mutex_resultado = 0;
+	
+	// ^^^^^^^^^^^^^^^^^=204020i2        EXPLICAR QUE HACE ESTO         399999999999999999991200000000000000000000000000000000000
+	while (mutex_resultado == 0) {
+
+		int descriptor_hueco_mutex = buscar_hueco_mutex();   //Teniendo nombre y descriptor libres, buscamos un hueco en el mutex
+
+		//Caso positivo comienza todo el proceso de creacion del mutex
+		if (descriptor_hueco_mutex != -1) {
+
+			//puntero al mutex del hueco que hemos buscado
+			MUTptr mutex_actual = &lista_mut[descriptor_hueco_mutex];   //CREO, NO LO SÉ 
+			mutex_actual->nombre = nombre;
+			mutex_actual->estado = OCUPADO;
+			num_mut_total++;
+
+
+			p_proc_actual->conj_descriptores[descriptor_resultado] = descriptor_hueco_mutex;
+
+			printf("DE puta madre %s", nombre);
+
+			mutex_resultado = 1;
+	
+
+		} else { //caso negativo: no hay hueco para el mutex mostramos error y bloqueamos el proceso
+
+			printk("ERROR KERNEL. Numero maximo de mutex alcanzado en el sistema.\n");
+			
+			//bloquear proceso HASTA QUE SE ELMINE ALGÚN MUTEX
 
 
 
+			//¿se puede hacer sin pararlo todo con un bucle/similares?  <<<<<<<<<<<===========================================
 
-	return des;
+
+			mutex_resultado = 0;
+			num_mut_bloqueos++;
+			bloquear(); //la funcion ya se encarga de actualizar listas y pasar al siguiente proceso
+			
+
+
+		}
+
+	}
+
+
+	fijar_nivel_int(n_interrupcion);
+	return descriptor_resultado;
+
 }
 
 
@@ -573,12 +661,15 @@ int abrir_mutex(char *nombre){
 
 }
 
+int lock(unsigned int mutexid){
 
 
 
 
-int abrir_mutex(char *nombre);
-int lock(unsigned int mutexid);
+
+}
+
+
 int unlock(unsigned int mutexid);
 int cerrar_mutex(unsigned int mutexid);
 
