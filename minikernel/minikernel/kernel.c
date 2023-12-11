@@ -656,19 +656,77 @@ int crear_mutex(char *nombre, int tipo){
 número negativo en caso de error */
 int abrir_mutex(char *nombre){
 
+	nombre = (char*) leer_registro(1); 
 
+	int n_interrupcion = fijar_nivel_int(NIVEL_1);
+
+	//Comprobamos que el nombre no excede el maximo de caracteres
+	if(strlen(nombre) > (MAX_NOM_MUT-1) ) {
+
+		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) ",nombre,strlen(nombre),MAX_NOM_MUT);
+		fijar_nivel_int(n_interrupcion);
+
+		return -1; //se cierra con codigo de error
+
+	}
+
+	
+
+	//buscar nombre
+	//Si no existe un mutex con ese nombre se devuelve un error 
+
+	int mutex_buscado = buscar_mut_nombre(nombre);
+	if(mutex_buscado == -1) {
+		
+		printk("ERROR KERNEL. Nombre -> %s no existente.\n", nombre);
+		fijar_nivel_int(n_interrupcion);
+		return -1; // Devolvemos el error
+
+	}
+
+	int descriptor_resultado = buscar_hueco_descriptores(); //almacenamos el resultado de buscar hueco para no llamar otra vez a la funcion en el if
+
+	if( descriptor_resultado == -1){ //Control de error: si no nos da un hueco sale de la funcion
+ 
+		printk("ERROR KERNEL. No hay hueco de descriptor.\n");
+		fijar_nivel_int(n_interrupcion);
+		return -1; // Devolvemos el error
+
+	} 
+
+	p_proc_actual->descriptores[descriptor_resultado] = mutex_buscado; 
+	p_proc_actual->n_descriptores_usados;
+
+	printk("Mutex %s ABIERTO\n",nombre); 
+	fijar_nivel_int(n_interrupcion); 
+
+	//Si se encuentra el hueco, se devuelve
+	return descriptor_resultado;
 
 
 }
 
 int lock(unsigned int mutexid){
 
+	unsigned int mut_id = (unsigned int) leer_registro(1);	
+
+	int n_interrupcion = fijar_nivel_int(NIVEL_1);
+
+	//si el id es menor que NUM MUT es que ✅
+	if(mut_id >= NUM_MUT){
+
+		printk("ERROR. ID de mutex %d fuera de rango.");
+		fijar_nivel_int(n_interrupcion);
+		return -1;
+
+	}
+
+	//Como se puede notar, aún está en proceso
 
 
 
 
 }
-
 
 int unlock(unsigned int mutexid);
 int cerrar_mutex(unsigned int mutexid);
