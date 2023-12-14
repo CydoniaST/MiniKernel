@@ -729,7 +729,63 @@ int lock(unsigned int mutexid){
 }
 
 int unlock(unsigned int mutexid);
-int cerrar_mutex(unsigned int mutexid);
+
+int cerrar_mutex(unsigned int mutexid){
+
+	unsigned int mut_id = (unsigned int) leer_registro(1);	
+
+	int n_interrupcion = fijar_nivel_int(NIVEL_1);
+
+	//si el id es menor que NUM MUT es que ✅
+	if(mut_id >= NUM_MUT){
+
+		printk("ERROR. ID de mutex %d fuera de rango.");
+		fijar_nivel_int(n_interrupcion);
+		return -1;
+
+	}
+
+	mutexid = mut_id;
+
+	int *resultado_buscar = buscar_mut_id((int)mutexid);
+	int descriptor = *resultado_buscar;
+	int posicion = *(resultado_buscar+1);
+
+	MUTptr mut = &lista_mut[posicion];
+
+	while(mut->estado_bloqueo_mut == BLOQUEADO){
+
+		unlock(mutexid);
+
+	}
+
+	//Liberamos el proceso 
+	mut->n_bloqueos=0;
+	mut->n_mut_espera=0;
+	mut->estado = LIBRE;
+	p_proc_actual->conj_descriptores[descriptor] = -1;
+	p_proc_actual->n_descriptores_abiertos--;
+	num_mut_total--;
+
+	printk("Cierre del mutex %s con id %d completado.\n",mut->nombre,mutexid);
+
+	if(num_mut_total>=1) { //contador_lista_bloqueados_mutex
+
+		num_mut_total--;
+		BCPptr p_proc_bloqueando = lista_bloqueados.primero;
+		p_proc_bloqueando->LISTO;
+		eliminar_primero(&lista_bloqueados);
+		insertar_ultimo(&lista_listos,p_proc_bloqueando);
+		printk("Desbloqueo del mutex %s con id %d completado.",mut->nombre,mutexid);
+
+
+	}
+
+	fijar_nivel_int(n_interrupcion);
+
+	return 0;
+
+}
 
 
 
