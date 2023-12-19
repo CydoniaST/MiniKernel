@@ -917,7 +917,7 @@ int cerrar_mutex(unsigned int mutexid){
 	mut->num_mut_bloqueos=0;
 	mut->n_mut_espera=0;
 	mut->estado = LIBRE;
-	p_proc_actual->conj_descriptores[descriptor] = -1;
+	p_proc_actual->conj_descriptores[posicion_mut] = -1;
 	p_proc_actual->n_descriptores_abiertos--;
 	num_mut_total--;
 
