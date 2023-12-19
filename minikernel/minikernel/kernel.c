@@ -705,7 +705,7 @@ int abrir_mutex(char *nombre){
 	} 
 
 	p_proc_actual->descriptores[descriptor_resultado] = mutex_buscado; 
-	p_proc_actual->n_descriptores_usados;
+	p_proc_actual->n_descriptores_usados++;
 
 	printk("Mutex %s ABIERTO\n",nombre); 
 	fijar_nivel_int(n_interrupcion); 
