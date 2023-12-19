@@ -1,5 +1,4 @@
-> [!IMPORTANT]
-> Ignorar comentarios que no tengan utilidad y/o relevancia
+
 /*
  *  kernel/kernel.c
  *
