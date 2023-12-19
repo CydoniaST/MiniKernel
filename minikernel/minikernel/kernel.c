@@ -740,8 +740,7 @@ int lock(unsigned int mutexid){
 		return -1;
 	}
 
-	int descriptor = *resultado_busqueda;
-	int posicion_mut = *(resultado_busqueda+1);
+	int posicion_mut = resultado_busqueda+1;
 
 	MUTptr mut = &lista_mut[posicion_mut];
 
@@ -827,8 +826,7 @@ int unlock(unsigned int mutexid){
 		return -1;
 	}
 
-	int descriptor = *resultado_busqueda;
-	int posicion_mut = *(resultado_busqueda+1);
+	int posicion_mut = resultado_busqueda+1;
 
 	MUTptr mut = &lista_mut[posicion_mut];
 
@@ -893,8 +891,7 @@ int cerrar_mutex(unsigned int mutexid){
 		return -1;
 	}
 
-	int descriptor = *resultado_busqueda;
-	int posicion_mut = *(resultado_busqueda+1);
+	int posicion_mut = resultado_busqueda+1;
 
 	MUTptr mut = &lista_mut[posicion];
 
