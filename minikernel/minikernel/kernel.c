@@ -863,9 +863,9 @@ int unlock(unsigned int mutexid){
 	if(mut->n_mut_espera >= 1){
 
 		mut->n_mut_espera--;
-		BCPptr p_proc_bloqueando = mut->lista_esperando_mut.primero;
+		BCPptr p_proc_bloqueando = mut->lista_mut_espera.primero;
 		p_proc_bloqueando->estado = LISTO;
-		eliminar_primero(&(mut->lista_esperando_mut));
+		eliminar_primero(&(mut->lista_mut_espera));
 		insertar_ultimo(&lista_listos,p_proc_bloqueando);
 		printk("El proceso con id %d ha sido desbloqueado\n",p_proc_bloqueando->id);
 
