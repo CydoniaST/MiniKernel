@@ -763,7 +763,7 @@ int lock(unsigned int mutexid){
 		/*¿Tiene propietario? 
 			no tiene y no tiene bloqueos -> lo cojo
 				- id_dueño = yo
-				- n_bloqueos ++
+				- num_mut_bloqueos ++
 				- n_interrupcion y return
 		
 		*/
@@ -842,7 +842,7 @@ int unlock(unsigned int mutexid){
 
 	MUTptr mut = &lista_mut[posicion_mut];
 
-	if(mut->n_bloqueos == 0) {
+	if(mut->num_mut_bloqueos == 0) {
 
 		printk("ERROR. Mutex con id %d no estaba bloqueado\n",mut_id);
 		fijar_nivel_int(n_interrupcion);
@@ -850,14 +850,14 @@ int unlock(unsigned int mutexid){
 
 	}
 
-	if(mut->n_bloqueos == 1) {
+	if(mut->num_mut_bloqueos == 1) {
 
 		mut->estado_bloqueo_mut = DESBLOQUEADO;
 		mut->id_poseedor_mut = -1;
 
 	}
 
-	mut->n_bloqueos--;
+	mut->num_mut_bloqueos--;
 	printk("El mutex %s con id %d ha sido desbloqueado\n",mut->nombre,mut->id_mut);
 
 	if(mut->n_mut_espera >= 1){
@@ -914,7 +914,7 @@ int cerrar_mutex(unsigned int mutexid){
 	}
 
 	//Liberamos el proceso 
-	mut->n_bloqueos=0;
+	mut->num_mut_bloqueos=0;
 	mut->n_mut_espera=0;
 	mut->estado = LIBRE;
 	p_proc_actual->conj_descriptores[descriptor] = -1;
