@@ -772,7 +772,7 @@ int lock(unsigned int mutexid){
 
 			mut->id_poseedor_mut = p_proc_actual->id;
 			mut->num_mut_bloqueos++;
-			mut->estado_bloqueo_mut = BLOQUEADO;
+			mut->estado_bloqueo_mut = MUT_BLOQUEADO;
 
 			printk("Mutex %s BLOQUEADO\n",mut->nombre);
 
@@ -852,7 +852,7 @@ int unlock(unsigned int mutexid){
 
 	if(mut->num_mut_bloqueos == 1) {
 
-		mut->estado_bloqueo_mut = DESBLOQUEADO;
+		mut->estado_bloqueo_mut = MUT_DESBLOQUEADO;
 		mut->id_poseedor_mut = -1;
 
 	}
@@ -907,7 +907,7 @@ int cerrar_mutex(unsigned int mutexid){
 
 	MUTptr mut = &lista_mut[posicion_mut];
 
-	while(mut->estado_bloqueo_mut == BLOQUEADO){
+	while(mut->estado_bloqueo_mut == MUT_BLOQUEADO){
 
 		unlock(mutexid);
 
