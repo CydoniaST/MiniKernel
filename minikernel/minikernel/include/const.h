@@ -1,9 +1,9 @@
 /*
  *  minikernel/include/const.h
  *
- *  Minikernel. Versión 1.0
+ *  Minikernel. VersiÃ³n 1.0
  *
- *  Fernando Pérez Costoya
+ *  Fernando PÃ©rez Costoya
  *
  */
 
@@ -36,8 +36,16 @@
 #define EJECUCION 2
 #define BLOQUEADO 3
 
+/* defines para el mutex  */
+#define NO_RECURSIVO 0
+#define RECURSIVO 1
+#define OCUPADO 0
+#define LIBRE 1
+#define MUT_DESBLOQUEADO 0
+#define MUT_BLOQUEADO 1
+	
 /*
- * Niveles de ejecución del procesador. 
+ * Niveles de ejecuciÃ³n del procesador. 
  */
 #define NUM_NIVELES 3
 #define NIVEL_1 1 /* Int. SW */
@@ -74,9 +82,9 @@
 #define MAX_NOM_MUT 8 /* longitud maxima de un nombre de mutex */
 
 /* constante usada en implementacion de manejador de terminal */
-#define TAM_BUF_TERM 8 /* tamaño del buffer del terminal */
+#define TAM_BUF_TERM 8 /* tamaÃ±o del buffer del terminal */
 
-/* dirección de puerto de E/S del terminal */
+/* direcciÃ³n de puerto de E/S del terminal */
 #define DIR_TERMINAL 1
 
 #endif /* _CONST_H */
