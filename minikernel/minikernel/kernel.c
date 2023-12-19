@@ -885,9 +885,16 @@ int cerrar_mutex(unsigned int mutexid){
 
 	mutexid = mut_id;
 
-	int *resultado_buscar = buscar_mut_id((int)mutexid);
-	int descriptor = *resultado_buscar;
-	int posicion = *(resultado_buscar+1);
+	
+	int resultado_busqueda = buscar_mut_id((int)mut_id);
+	if(resultado_busqueda == -1){
+		printk("ERROR. ID de mutex %d no encontrado\n",mut_id);
+		fijar_nivel_int(n_interrupcion);
+		return -1;
+	}
+
+	int descriptor = *resultado_busqueda;
+	int posicion_mut = *(resultado_busqueda+1);
 
 	MUTptr mut = &lista_mut[posicion];
 
