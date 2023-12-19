@@ -15,6 +15,7 @@
 
 #include "kernel.h"	/* Contiene defs. usadas por este modulo */
 
+
 /*
  *
  * Funciones relacionadas con la tabla de procesos:
@@ -430,7 +431,7 @@ void bloquear(){
 
 	
 
-	//poner el proceso en bloqueado
+	//poner el proceso en  
 	BCPptr actual = p_proc_actual;
 
 	 
@@ -490,38 +491,41 @@ int dormir(unsigned int segundos){
 
 }
 
+
+
+
 /*        SERVICIOS MUTEX        */
 
-
-
-/*Crear mutex:
-	-Crea el mutex con el nombre y tipo especificados. 
-	-Devuelve un entero que representa un descriptor para acceder al mutex. 
-	-En caso de error devuelve un número negativo. 
-	-Habrá que definir dos constantes, que deberían incluirse tanto en el archivo de cabecera usado por los programas 
-	de usuario (“servicios.h”) como en el usado por el sistema operativo 
-	(“kernel.h”), para facilitar la especificación del tipo de mutex 
-	(NO_RECURSIVO y RECURSIVO) */
-
-
-
-
-//funcion auxiliar a mutex: "buscar mutex por nombre", devuelve el num de mutex con ese nombre o da error
+/* Funciones auxiliares de mutex */
+//Buscar mutex por nombre\n", devuelve el num de mutex con ese nombre o da error
 int buscar_mut_nombre(char* nombre) {
     int i = 0;
     while (i < NUM_MUT) {
-        if (strcmp(lista_mut[i].nombre, nombre) == 0) {
-            return i; //devolver el numero de mutex
-        }
+
+        if (strcmp(lista_mut[i].nombre, nombre) == 0) return i; //devolver el numero de mutex
         i++;
+
     }
+
     return -1; //Error: nombre no encontrado
+
 }
 
+//Buscar mutex por id, devuelve el num de mutex con ese id o da error
+int buscar_mut_id(unsigned int mutexid){
+	int i = 0;
+	while (i< NUM_MUT) {
 
+		if(lista_mut[i].id_mut == mutexid) return i; //devolver el numero de mutex
+		i++;
 
+	}
 
-	//funcion auxiliar a mutex: busca un hueco en el array de descriptores
+	return -1; //Error: nombre no encontrado
+
+}
+
+//funcion auxiliar a mutex: busca un hueco en el array de descriptores
 int buscar_hueco_descriptores() {
     int i = 0;
     while (i < NUM_MUT_PROC) {
@@ -533,9 +537,7 @@ int buscar_hueco_descriptores() {
     return -1; //Error: no se encuentra hueco de descriptor
 }
 
-
-
-	//funcion auxiliar a mutex: buscamos un hueco de mutex
+//funcion auxiliar a mutex: buscamos un hueco de mutex
 int buscar_hueco_mutex() { 
     int i = 0; 
     while (i < NUM_MUT) { 
@@ -549,7 +551,14 @@ int buscar_hueco_mutex() {
 
 
 
-
+/*Crear mutex:
+	-Crea el mutex con el nombre y tipo especificados. 
+	-Devuelve un entero que representa un descriptor para acceder al mutex. 
+	-En caso de error devuelve un número negativo. 
+	-Habrá que definir dos constantes, que deberían incluirse tanto en el archivo de cabecera usado por los programas 
+	de usuario (“servicios.h”) como en el usado por el sistema operativo 
+	(“kernel.h”), para facilitar la especificación del tipo de mutex 
+	(NO_RECURSIVO y RECURSIVO) */
 
 /*Enunciado práctica: Cuando se crea un mutex, el proceso obtiene el descriptor que le permite 
 	acceder al mismo. Si ya existe un mutex con ese nombre o no quedan 
@@ -571,7 +580,7 @@ int crear_mutex(char *nombre, int tipo){
 	//Comprobamos que el nombre no excede el maximo de caracteres
 	if(strlen(nombre) > (MAX_NOM_MUT-1) ) {
 
-		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) ",nombre,strlen(nombre),MAX_NOM_MUT);
+		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) \n",nombre,strlen(nombre),MAX_NOM_MUT);
 		fijar_nivel_int(n_interrupcion);
 
 		return -1; //se cierra con codigo de error
@@ -590,7 +599,7 @@ int crear_mutex(char *nombre, int tipo){
 	
 	int descriptor_resultado = buscar_hueco_descriptores(); //almacenamos el resultado de buscar hueco para no llamar otra vez a la funcion en el if
 
-	if( descriptor_resultado == -1){ //Control de erorr: si no nos da un hueco sale de la funcion
+	if( descriptor_resultado == -1){ //Control de error: si no nos da un hueco sale de la funcion
  
 		printk("ERROR KERNEL. No hay hueco de descriptor.\n");
 		fijar_nivel_int(n_interrupcion);
@@ -601,7 +610,7 @@ int crear_mutex(char *nombre, int tipo){
 
 	int mutex_resultado = 0;
 	
-	// ^^^^^^^^^^^^^^^^^=204020i2        EXPLICAR QUE HACE ESTO         399999999999999999991200000000000000000000000000000000000
+	//Busqueda de hueco mutex y creacion en caso positivo
 	while (mutex_resultado == 0) {
 
 		int descriptor_hueco_mutex = buscar_hueco_mutex();   //Teniendo nombre y descriptor libres, buscamos un hueco en el mutex
@@ -618,7 +627,7 @@ int crear_mutex(char *nombre, int tipo){
 
 			p_proc_actual->conj_descriptores[descriptor_resultado] = descriptor_hueco_mutex;
 
-			printf("DE puta madre %s", nombre);
+			printf("DE puta madre %s\n", nombre);
 
 			mutex_resultado = 1;
 	
@@ -663,7 +672,7 @@ int abrir_mutex(char *nombre){
 	//Comprobamos que el nombre no excede el maximo de caracteres
 	if(strlen(nombre) > (MAX_NOM_MUT-1) ) {
 
-		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) ",nombre,strlen(nombre),MAX_NOM_MUT);
+		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) \n",nombre,strlen(nombre),MAX_NOM_MUT);
 		fijar_nivel_int(n_interrupcion);
 
 		return -1; //se cierra con codigo de error
@@ -706,6 +715,8 @@ int abrir_mutex(char *nombre){
 
 }
 
+
+
 int lock(unsigned int mutexid){
 
 	unsigned int mut_id = (unsigned int) leer_registro(1);	
@@ -715,20 +726,146 @@ int lock(unsigned int mutexid){
 	//si el id es menor que NUM MUT es que ✅
 	if(mut_id >= NUM_MUT){
 
-		printk("ERROR. ID de mutex %d fuera de rango.");
+		printk("ERROR. ID de mutex %d fuera de rango.\n", mut_id);
+		fijar_nivel_int(n_interrupcion);
+		return -1;
+
+	} mutexid = mut_id;
+
+	int resultado_busqueda = buscar_mut_id((int)mut_id);
+	if(resultado_busqueda == -1){
+		printk("ERROR. ID de mutex %d no encontrado\n",mut_id);
+		fijar_nivel_int(n_interrupcion);
+		return -1;
+	}
+
+	int descriptor = *resultado_busqueda;
+	int posicion_mut = *(resultado_busqueda+1);
+
+	MUTptr mut = &lista_mut[posicion_mut];
+
+	
+
+	while (true) {
+
+		/*¿Tiene propietario? 
+			no tiene y no tiene bloqueos -> lo cojo
+				- id_dueño = yo
+				- n_bloqueos ++
+				- n_interrupcion y return
+		
+		*/
+
+		if(mut->id_poseedor_mut == -1 && mut->num_mut_bloqueos == 0) {
+
+			mut->id_poseedor_mut = p_proc_actual->id;
+			mut->num_mut_bloqueos++;
+			mut->estado_bloqueo_mut = BLOQUEADO;
+
+			printk("Mutex %s BLOQUEADO\n",mut->nombre);
+
+			fijar_nivel_int(n_interrupcion);
+			return descriptor;
+
+		} 
+
+		if(mut->id_poseedor_mut != p_proc_actual->id) {
+
+			printk("ERROR. Mutex ya poseido por proceso %d.\n",mut->id_poseedor_mut);
+			fijar_nivel_int(n_interrupcion);
+			return -1;
+
+		}
+
+		if(mut->id_poseedor_mut == p_proc_actual->id){
+
+			if(mut->tipo == NO_RECURSIVO){
+
+				printk("ERROR. Mutex no recursivo ya bloqueado.");
+				fijar_nivel_int(n_interrupcion);
+				return -1;
+
+			}
+
+			
+			mut->num_mut_bloqueos++;
+			fijar_nivel_int(n_interrupcion);
+			return descriptor;
+
+
+		}
+
+
+
+	}
+
+
+}
+
+
+int unlock(unsigned int mutexid){
+	
+	unsigned int mut_id = (unsigned int) leer_registro(1);	
+
+	int n_interrupcion = fijar_nivel_int(NIVEL_1);
+
+	//si el id es menor que NUM MUT es que ✅
+	if(mut_id >= NUM_MUT){
+
+		printk("ERROR. ID de mutex %d fuera de rango.\n", mut_id);
+		fijar_nivel_int(n_interrupcion);
+		return -1;
+
+	} mutexid = mut_id;
+
+
+	int resultado_busqueda = buscar_mut_id((int)mut_id);
+	if(resultado_busqueda == -1){
+		printk("ERROR. ID de mutex %d no encontrado\n",mut_id);
+		fijar_nivel_int(n_interrupcion);
+		return -1;
+	}
+
+	int descriptor = *resultado_busqueda;
+	int posicion_mut = *(resultado_busqueda+1);
+
+	MUTptr mut = &lista_mut[posicion_mut];
+
+	if(mut->n_bloqueos == 0) {
+
+		printk("ERROR. Mutex con id %d no estaba bloqueado\n",mut_id);
 		fijar_nivel_int(n_interrupcion);
 		return -1;
 
 	}
 
-	//Como se puede notar, aún está en proceso
+	if(mut->n_bloqueos == 1) {
 
+		mut->estado_bloqueo_mut = DESBLOQUEADO;
+		mut->id_poseedor_mut = -1;
 
+	}
+
+	mut->n_bloqueos--;
+	printk("El mutex %s con id %d ha sido desbloqueado\n",mut->nombre,mut->id_mut);
+
+	if(mut->n_mut_espera >= 1){
+
+		mut->n_mut_espera--;
+		BCPptr p_proc_bloqueando = mut->lista_esperando_mut.primero;
+		p_proc_bloqueando->estado = LISTO;
+		eliminar_primero(&(mut->lista_esperando_mut));
+		insertar_ultimo(&lista_listos,p_proc_bloqueando);
+		printk("El proceso con id %d ha sido desbloqueado\n",p_proc_bloqueando->id);
+
+	}
+
+	fijar_nivel_int(n_interrupcion);
+	return descriptor;
 
 
 }
 
-int unlock(unsigned int mutexid);
 
 int cerrar_mutex(unsigned int mutexid){
 
@@ -760,11 +897,11 @@ int cerrar_mutex(unsigned int mutexid){
 	}
 
 	//Liberamos el proceso 
-	mut->n_bloqueos=0;
+	mut->num_mut_bloqueos=0;
 	mut->n_mut_espera=0;
 	mut->estado = LIBRE;
-	p_proc_actual->conj_descriptores[descriptor] = -1;
-	p_proc_actual->n_descriptores_abiertos--;
+	p_proc_actual->c[descriptor] = -1;
+	p_proc_actual->n_descriptores_usados--;
 	num_mut_total--;
 
 	printk("Cierre del mutex %s con id %d completado.\n",mut->nombre,mutexid);
@@ -776,8 +913,7 @@ int cerrar_mutex(unsigned int mutexid){
 		p_proc_bloqueando->LISTO;
 		eliminar_primero(&lista_bloqueados);
 		insertar_ultimo(&lista_listos,p_proc_bloqueando);
-		printk("Desbloqueo del mutex %s con id %d completado.",mut->nombre,mutexid);
-
+		printk("Desbloqueo del mutex %s con id %d completado.\n",mut->nombre,mutexid);
 
 	}
 
@@ -786,6 +922,7 @@ int cerrar_mutex(unsigned int mutexid){
 	return 0;
 
 }
+
 
 
 
