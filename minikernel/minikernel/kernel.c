@@ -45,6 +45,10 @@ static int buscar_BCP_libre(){
 	return -1;
 }
 
+int obtener_id_pr(){
+	return p_proc_actual->id;
+}
+
 /*
  *
  * Funciones que facilitan el manejo de las listas de BCPs
