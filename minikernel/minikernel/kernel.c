@@ -918,7 +918,7 @@ int cerrar_mutex(unsigned int mutexid){
 	mut->n_mut_espera=0;
 	mut->estado = LIBRE;
 	p_proc_actual->conj_descriptores[posicion_mut] = -1;
-	p_proc_actual->n_descriptores_abiertos--;
+	p_proc_actual->n_descriptores_usados--;
 	num_mut_total--;
 
 	printk("Cierre del mutex %s con id %d completado.\n",mut->nombre,mutexid);
@@ -927,7 +927,7 @@ int cerrar_mutex(unsigned int mutexid){
 
 		num_mut_total--;
 		BCPptr p_proc_bloqueando = lista_bloqueados.primero;
-		p_proc_bloqueando->LISTO;
+		p_proc_bloqueando->estado = LISTO;
 		eliminar_primero(&lista_bloqueados);
 		insertar_ultimo(&lista_listos,p_proc_bloqueando);
 		printk("Desbloqueo del mutex %s con id %d completado.",mut->nombre,mutexid);
