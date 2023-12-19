@@ -1,4 +1,3 @@
-
 /*
  *  kernel/kernel.c
  *
@@ -15,7 +14,7 @@
  */
 
 #include "kernel.h"	/* Contiene defs. usadas por este modulo */
-
+#include "string.h"
 
 /*
  *
@@ -58,10 +57,12 @@ static int buscar_BCP_libre(){
  * Inserta un BCP al final de la lista.
  */
 static void insertar_ultimo(lista_BCPs *lista, BCP * proc){
-	if (lista->primero==NULL)
+	if (lista->primero==NULL){
 		lista->primero= proc;
-	else
+		}
+	else {
 		lista->ultimo->siguiente=proc;
+		}
 	lista->ultimo= proc;
 	proc->siguiente=NULL;
 }
@@ -70,12 +71,14 @@ static void insertar_ultimo(lista_BCPs *lista, BCP * proc){
 
 /*++++++++++++++++ AÑADIDA POR NOSOTROS: INSERTAR PRIMERO "insertar_primero"++++++++++++++++++*/
 static void insertar_primero(lista_BCPs *lista, BCP *proc){
-	if(lista->primero != NULL)
+	if(lista->primero != NULL) {
 		proc->siguiente = lista->primero;
+		}
 		
-	else
+	else {
 		proc->siguiente = NULL;
 		lista->ultimo = proc;
+		}
 	lista->primero = proc;
 
 }
@@ -230,6 +233,30 @@ static void int_terminal(){
         return;
 }
 
+/* funcion auxiliar para la llamada dormir, actualiza los tiempos de los procesos dormidos */ 
+void restarTiempoBloqueados(){ 
+ 
+	BCPptr aux = lista_bloqueados.primero; 
+
+	/* recorro la lista y actualizo los tiempos */ 
+
+	while(aux != NULL){ 
+		BCPptr siguiente = aux->siguiente; 
+		aux->tiempo_dormir--; 
+
+		if(aux->tiempo_dormir == 0){ 
+			aux->estado = LISTO; 
+			eliminar_elem(&lista_bloqueados, aux); 
+			insertar_ultimo(&lista_listos, aux); 
+	} 
+		aux = siguiente; 
+	} 
+} 
+
+
+
+
+
 /*
  * Tratamiento de interrupciones de reloj
  */
@@ -274,9 +301,7 @@ listas correspondientes*/
 
 
 
-/*
-*************PREGUNTAR: ¿SE HACE DE ALGUNA DE LAS MANERAS QUE HEMOS PLANTEADO AL FINAL DE ESTA FUNCIÓN?
-						¿O NO ES NECESARIO EVALUARLO, PORQUE CONTAMOS CON QUE CLOCK FUNCIONE BIEN?****
+
 
 
 
@@ -389,14 +414,14 @@ int sis_cambios(BCPptr actual){
 	p_proc_actual=planificador();
 
 	cambio_contexto(NULL, &(p_proc_actual->contexto_regs));
-        return; /* no debería llegar aqui */
+        return 0; /* no debería llegar aqui */
 	
 	printk("-> C.CONTEXTO POR FIN: de %d a %d\n",
 			p_proc_anterior->id, p_proc_actual->id);
 
 	liberar_pila(p_proc_anterior->pila);
 	cambio_contexto(NULL, &(p_proc_actual->contexto_regs));
-        return; /* no debería llegar aqui */
+        return 0; /* no debería llegar aqui */
 
 		
 
@@ -405,25 +430,6 @@ int sis_cambios(BCPptr actual){
 
 
 
-/* funcion auxiliar para la llamada dormir, actualiza los tiempos de los procesos dormidos */ 
-void restarTiempoBloqueados(){ 
- 
-	BCPptr aux = lista_bloqueados.primero; 
-
-	/* recorro la lista y actualizo los tiempos */ 
-
-	while(aux != NULL){ 
-		BCPptr siguiente = aux->siguiente; 
-		aux->tiempo_dormir--; 
-
-		if(aux->tiempo_dormir == 0){ 
-			aux->estado = LISTO; 
-			eliminar_elem(&lista_bloqueados, aux); 
-			insertar_ultimo(&lista_listos, aux); 
-	} 
-		aux = siguiente; 
-	} 
-} 
 
 
 //proceso auxiliar para bloquear proceso y actualizar listas
@@ -432,7 +438,7 @@ void bloquear(){
 
 	
 
-	//poner el proceso en  
+	//poner el proceso en bloqueado
 	BCPptr actual = p_proc_actual;
 
 	 
@@ -472,7 +478,7 @@ int dormir(unsigned int segundos){
 	
 	
 	//Se multiplican los segundos por los ticks establecidos (en este caso 100)
-	actual->tiempo_dormir = segundos_espera * TICK;
+	p_proc_actual->tiempo_dormir = segundos_espera * TICK;
 
 	//guardamos el nivel de interrupcion
 	int n_interrupcion = fijar_nivel_int(NIVEL_3);
@@ -492,24 +498,32 @@ int dormir(unsigned int segundos){
 
 }
 
-
-
-
 /*        SERVICIOS MUTEX        */
 
-/* Funciones auxiliares de mutex */
-//Buscar mutex por nombre\n", devuelve el num de mutex con ese nombre o da error
+
+
+/*Crear mutex:
+	-Crea el mutex con el nombre y tipo especificados. 
+	-Devuelve un entero que representa un descriptor para acceder al mutex. 
+	-En caso de error devuelve un número negativo. 
+	-Habrá que definir dos constantes, que deberían incluirse tanto en el archivo de cabecera usado por los programas 
+	de usuario (“servicios.h”) como en el usado por el sistema operativo 
+	(“kernel.h”), para facilitar la especificación del tipo de mutex 
+	(NO_RECURSIVO y RECURSIVO) */
+
+
+
+
+//funcion auxiliar a mutex: "buscar mutex por nombre", devuelve el num de mutex con ese nombre o da error
 int buscar_mut_nombre(char* nombre) {
     int i = 0;
     while (i < NUM_MUT) {
-
-        if (strcmp(lista_mut[i].nombre, nombre) == 0) return i; //devolver el numero de mutex
+        if (strcmp(lista_mut[i].nombre, nombre) == 0) {
+            return i; //devolver el numero de mutex
+        }
         i++;
-
     }
-
     return -1; //Error: nombre no encontrado
-
 }
 
 //Buscar mutex por id, devuelve el num de mutex con ese id o da error
@@ -526,7 +540,9 @@ int buscar_mut_id(unsigned int mutexid){
 
 }
 
-//funcion auxiliar a mutex: busca un hueco en el array de descriptores
+
+
+	//funcion auxiliar a mutex: busca un hueco en el array de descriptores
 int buscar_hueco_descriptores() {
     int i = 0;
     while (i < NUM_MUT_PROC) {
@@ -538,11 +554,13 @@ int buscar_hueco_descriptores() {
     return -1; //Error: no se encuentra hueco de descriptor
 }
 
-//funcion auxiliar a mutex: buscamos un hueco de mutex
+
+
+	//funcion auxiliar a mutex: buscamos un hueco de mutex
 int buscar_hueco_mutex() { 
     int i = 0; 
     while (i < NUM_MUT) { 
-        if (lista_mutex[i].estado == LIBRE) { 
+        if (lista_mut[i].estado == LIBRE) { 
             return i; /* devuelve la posicion del mutex libre */ 
         } 
         i++; 
@@ -552,14 +570,7 @@ int buscar_hueco_mutex() {
 
 
 
-/*Crear mutex:
-	-Crea el mutex con el nombre y tipo especificados. 
-	-Devuelve un entero que representa un descriptor para acceder al mutex. 
-	-En caso de error devuelve un número negativo. 
-	-Habrá que definir dos constantes, que deberían incluirse tanto en el archivo de cabecera usado por los programas 
-	de usuario (“servicios.h”) como en el usado por el sistema operativo 
-	(“kernel.h”), para facilitar la especificación del tipo de mutex 
-	(NO_RECURSIVO y RECURSIVO) */
+
 
 /*Enunciado práctica: Cuando se crea un mutex, el proceso obtiene el descriptor que le permite 
 	acceder al mismo. Si ya existe un mutex con ese nombre o no quedan 
@@ -581,7 +592,7 @@ int crear_mutex(char *nombre, int tipo){
 	//Comprobamos que el nombre no excede el maximo de caracteres
 	if(strlen(nombre) > (MAX_NOM_MUT-1) ) {
 
-		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) \n",nombre,strlen(nombre),MAX_NOM_MUT);
+		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) ",nombre,strlen(nombre),MAX_NOM_MUT);
 		fijar_nivel_int(n_interrupcion);
 
 		return -1; //se cierra con codigo de error
@@ -600,7 +611,7 @@ int crear_mutex(char *nombre, int tipo){
 	
 	int descriptor_resultado = buscar_hueco_descriptores(); //almacenamos el resultado de buscar hueco para no llamar otra vez a la funcion en el if
 
-	if( descriptor_resultado == -1){ //Control de error: si no nos da un hueco sale de la funcion
+	if( descriptor_resultado == -1){ //Control de erorr: si no nos da un hueco sale de la funcion
  
 		printk("ERROR KERNEL. No hay hueco de descriptor.\n");
 		fijar_nivel_int(n_interrupcion);
@@ -611,7 +622,7 @@ int crear_mutex(char *nombre, int tipo){
 
 	int mutex_resultado = 0;
 	
-	//Busqueda de hueco mutex y creacion en caso positivo
+	// ^^^^^^^^^^^^^^^^^=204020i2        EXPLICAR QUE HACE ESTO         399999999999999999991200000000000000000000000000000000000
 	while (mutex_resultado == 0) {
 
 		int descriptor_hueco_mutex = buscar_hueco_mutex();   //Teniendo nombre y descriptor libres, buscamos un hueco en el mutex
@@ -621,14 +632,18 @@ int crear_mutex(char *nombre, int tipo){
 
 			//puntero al mutex del hueco que hemos buscado
 			MUTptr mutex_actual = &lista_mut[descriptor_hueco_mutex];   //CREO, NO LO SÉ 
-			mutex_actual->nombre = nombre;
+			
+			// Copiamos el string
+			strncpy(mutex_actual->nombre, nombre, MAX_NOM_MUT);
+		
+			
 			mutex_actual->estado = OCUPADO;
 			num_mut_total++;
 
 
 			p_proc_actual->conj_descriptores[descriptor_resultado] = descriptor_hueco_mutex;
 
-			printf("DE puta madre %s\n", nombre);
+			printf("DE puta madre %s", nombre);
 
 			mutex_resultado = 1;
 	
@@ -645,7 +660,6 @@ int crear_mutex(char *nombre, int tipo){
 
 
 			mutex_resultado = 0;
-			num_mut_bloqueos++;
 			bloquear(); //la funcion ya se encarga de actualizar listas y pasar al siguiente proceso
 			
 
@@ -673,7 +687,7 @@ int abrir_mutex(char *nombre){
 	//Comprobamos que el nombre no excede el maximo de caracteres
 	if(strlen(nombre) > (MAX_NOM_MUT-1) ) {
 
-		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) \n",nombre,strlen(nombre),MAX_NOM_MUT);
+		printk("ERROR MINIKERNEL: %s excede el max de caracteres (%d/%d) ",nombre,strlen(nombre),MAX_NOM_MUT);
 		fijar_nivel_int(n_interrupcion);
 
 		return -1; //se cierra con codigo de error
@@ -704,7 +718,7 @@ int abrir_mutex(char *nombre){
 
 	} 
 
-	p_proc_actual->descriptores[descriptor_resultado] = mutex_buscado; 
+	p_proc_actual->conj_descriptores[descriptor_resultado] = mutex_buscado; 
 	p_proc_actual->n_descriptores_usados++;
 
 	printk("Mutex %s ABIERTO\n",nombre); 
@@ -715,8 +729,6 @@ int abrir_mutex(char *nombre){
 
 
 }
-
-
 
 int lock(unsigned int mutexid){
 
@@ -746,7 +758,7 @@ int lock(unsigned int mutexid){
 
 	
 
-	while (true) {
+	while (1) {
 
 		/*¿Tiene propietario? 
 			no tiene y no tiene bloqueos -> lo cojo
@@ -765,7 +777,7 @@ int lock(unsigned int mutexid){
 			printk("Mutex %s BLOQUEADO\n",mut->nombre);
 
 			fijar_nivel_int(n_interrupcion);
-			return descriptor;
+			return resultado_busqueda;
 
 		} 
 
@@ -790,7 +802,7 @@ int lock(unsigned int mutexid){
 			
 			mut->num_mut_bloqueos++;
 			fijar_nivel_int(n_interrupcion);
-			return descriptor;
+			return resultado_busqueda;
 
 
 		}
@@ -860,10 +872,11 @@ int unlock(unsigned int mutexid){
 	}
 
 	fijar_nivel_int(n_interrupcion);
-	return descriptor;
+	return resultado_busqueda;
 
 
 }
+
 
 
 int cerrar_mutex(unsigned int mutexid){
@@ -883,7 +896,6 @@ int cerrar_mutex(unsigned int mutexid){
 
 	mutexid = mut_id;
 
-	
 	int resultado_busqueda = buscar_mut_id((int)mut_id);
 	if(resultado_busqueda == -1){
 		printk("ERROR. ID de mutex %d no encontrado\n",mut_id);
@@ -893,7 +905,7 @@ int cerrar_mutex(unsigned int mutexid){
 
 	int posicion_mut = resultado_busqueda+1;
 
-	MUTptr mut = &lista_mut[posicion];
+	MUTptr mut = &lista_mut[posicion_mut];
 
 	while(mut->estado_bloqueo_mut == BLOQUEADO){
 
@@ -902,11 +914,11 @@ int cerrar_mutex(unsigned int mutexid){
 	}
 
 	//Liberamos el proceso 
-	mut->num_mut_bloqueos=0;
+	mut->n_bloqueos=0;
 	mut->n_mut_espera=0;
 	mut->estado = LIBRE;
-	p_proc_actual->c[descriptor] = -1;
-	p_proc_actual->n_descriptores_usados--;
+	p_proc_actual->conj_descriptores[descriptor] = -1;
+	p_proc_actual->n_descriptores_abiertos--;
 	num_mut_total--;
 
 	printk("Cierre del mutex %s con id %d completado.\n",mut->nombre,mutexid);
@@ -918,7 +930,8 @@ int cerrar_mutex(unsigned int mutexid){
 		p_proc_bloqueando->LISTO;
 		eliminar_primero(&lista_bloqueados);
 		insertar_ultimo(&lista_listos,p_proc_bloqueando);
-		printk("Desbloqueo del mutex %s con id %d completado.\n",mut->nombre,mutexid);
+		printk("Desbloqueo del mutex %s con id %d completado.",mut->nombre,mutexid);
+
 
 	}
 
@@ -927,7 +940,6 @@ int cerrar_mutex(unsigned int mutexid){
 	return 0;
 
 }
-
 
 
 
