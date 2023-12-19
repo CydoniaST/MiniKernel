@@ -18,18 +18,9 @@
 #ifndef _KERNEL_H
 #define _KERNEL_H
 
-/* defines para el mutex  */
-#define NO_RECURSIVO 0
-#define RECURSIVO 1
-#define OCUPADO 0
-#define LIBRE 1
-#define DESBLOQUEADO 0
-#define BLOQUEADO 1
 
 
-#define NUM_MUT //numero de mutex
-#define MAX_NOM_MUT  //Limitamos el tamaño del nombre del mutex
-#define NUM_MUT_PROC //Limite de descriptores por proceso
+
 
 #include "const.h"
 #include "HAL.h"
