@@ -19,9 +19,6 @@
 #define _KERNEL_H
 
 
-
-
-
 #include "const.h"
 #include "HAL.h"
 #include "llamsis.h"
@@ -36,10 +33,10 @@
 typedef struct BCP_t *BCPptr;
 
 typedef struct BCP_t {
-		int id;				/* ident. del proceso */
-		int estado;			/* TERMINADO|LISTO|EJECUCION|BLOQUEADO*/
-		contexto_t contexto_regs;	/* copia de regs. de UCP */
-		void * pila;			/* dir. inicial de la pila */
+	int id;				/* ident. del proceso */
+	int estado;			/* TERMINADO|LISTO|EJECUCION|BLOQUEADO*/
+	contexto_t contexto_regs;	/* copia de regs. de UCP */
+	void * pila;			/* dir. inicial de la pila */
 	BCPptr siguiente;		/* puntero a otro BCP */
 	void *info_mem;			/* descriptor del mapa de memoria */
 	
@@ -76,12 +73,13 @@ typedef struct MUT_t{
 	char nombre[MAX_NOM_MUT];      //nombre que no excede la constante
 	int estado;                   /* LIBRE | OCUPADO */
 	int tipo;					 //Especificación del tipo RECURSIVO | NO RECURSIVO 
+	int id_mut;
 
 	lista_BCPs lista_mut_espera;  // lista de procesos que esperan al mutex
 	int n_mut_espera;            // numero de procesos de mutex en espera: tamaño de la lista
 	int id_poseedor_mut;		// identificador del proceso que posee al mutex
 	int num_mut_bloqueos;	   // numero de mutex bloqueados
-	int estado_bloqueo_mut;	  // 0 DESBLOQUEADO | 1 BLOQUEADO
+	int estado_bloqueo_mut;	  // 0 MUT_DESBLOQUEADO | 1 MUT_BLOQUEADO
 
 
 
@@ -146,24 +144,9 @@ int sis_terminar_proceso();
 int sis_escribir();
 
 
-/*
-Incluir la llamada que, entre otras labores, debe poner al proceso en estado
-bloqueado, reajustar las listas de BCPs correspondientes y realizar el cambio
-de contexto.
-*/
-int sis_cambios();
 
-
-
-/*
-* Variable global que contiene las rutinas que realizan cada llamada
-*/
-servicio tabla_servicios[NSERVICIOS]={	{sis_crear_proceso},
-					{sis_terminar_proceso},
-					{sis_escribir}};
-
-#endif /* _KERNEL_H */
-
+int obtener_id_pr();
+int dormir(unsigned int segundos);
 
 /*        SERVICIOS MUTEX        */
 int crear_mutex(char *nombre, int tipo);
@@ -178,3 +161,24 @@ int abrir_mutex(char *nombre);
 int lock(unsigned int mutexid);
 int unlock(unsigned int mutexid);
 int cerrar_mutex(unsigned int mutexid);
+
+
+/*
+* Variable global que contiene las rutinas que realizan cada llamada
+*/
+servicio tabla_servicios[NSERVICIOS]={	{sis_crear_proceso},
+					{sis_terminar_proceso},
+					{sis_escribir},
+					{obtener_id_pr},
+					{dormir},
+					{crear_mutex},
+					{abrir_mutex},
+					{lock},
+					{unlock},
+					{cerrar_mutex}
+					};
+
+#endif /* _KERNEL_H */
+
+
+
