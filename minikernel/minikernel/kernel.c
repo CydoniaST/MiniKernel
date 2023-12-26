@@ -6,7 +6,7 @@
  *  Fernando P�rez Costoya
  *
  */
-// https://ydray.com/get/t/u17029884118902jBMD74f40d8fafe6gS
+
 /*
  *
  * Fichero que contiene la funcionalidad del sistema operativo
@@ -45,9 +45,9 @@ static int buscar_BCP_libre(){
 	return -1;
 }
 
-int obtener_id_pr(){
-	return p_proc_actual->id;
-}
+
+ 
+
 
 /*
  *
@@ -74,6 +74,7 @@ static void insertar_ultimo(lista_BCPs *lista, BCP * proc){
 
 
 /*++++++++++++++++ AÑADIDA POR NOSOTROS: INSERTAR PRIMERO "insertar_primero"++++++++++++++++++*/
+/*
 static void insertar_primero(lista_BCPs *lista, BCP *proc){
 	if(lista->primero != NULL) {
 		proc->siguiente = lista->primero;
@@ -87,6 +88,7 @@ static void insertar_primero(lista_BCPs *lista, BCP *proc){
 
 }
 
+*/
 
 // ↑↑ Tras un análisis, es probable que sea innecesario 
 
@@ -179,6 +181,29 @@ static void liberar_proceso(){
         return; /* no deber�a llegar aqui */
 }
 
+
+/*
+Funcion auxiliar que inicializa la tabla de mutex
+
+*/
+void iniciar_tabla_mut(){
+	
+	for(int i=0; i<NUM_MUT;i++){
+	
+		lista_mut[i].estado = LIBRE;
+		lista_mut[i].lista_mut_espera.primero = NULL;
+		lista_mut[i].n_mut_espera = 0;
+		lista_mut[i].id_poseedor_mut = -1;
+		lista_mut[i].num_mut_bloqueos = 0;
+		lista_mut[i].estado_bloqueo_mut = MUT_DESBLOQUEADO; 
+		
+	
+	}
+
+
+}
+
+
 /*
  *
  * Funciones relacionadas con el tratamiento de interrupciones
@@ -268,7 +293,7 @@ static void int_reloj(){
 
 	printk("-> TRATANDO INT. DE RELOJ\n");
 
-		restarTiempoBloqueados();
+	restarTiempoBloqueados();
         return;
 }
 
@@ -343,6 +368,13 @@ static int crear_tarea(char *prog){
 			&(p_proc->contexto_regs));
 		p_proc->id=proc;
 		p_proc->estado=LISTO;
+		//para dormir
+		p_proc->tiempo_dormir=0;
+		
+		//para mutex: inicializar los descriptores y por consecuencia el contador de descriptores usados
+		for(int i=0; i < NUM_MUT_PROC ; i++) p_proc->conj_descriptores[i] = -1;
+		p_proc->n_descriptores_usados = 0;
+		
 
 		/* lo inserta al final de cola de listos */
 		insertar_ultimo(&lista_listos, p_proc);
@@ -397,6 +429,21 @@ int sis_escribir()
  */
 int sis_terminar_proceso(){
 
+	for(int i = 0; p_proc_actual->n_descriptores_usados >= 1; i++){
+	
+		if(p_proc_actual -> conj_descriptores[i] != -1){
+			
+			if(cerrar_mutex(p_proc_actual -> conj_descriptores[i]) == -1){
+			
+				return 0;
+				
+			}
+			
+
+		}
+	}
+		
+		
 	printk("-> FIN PROCESO %d\n", p_proc_actual->id);
 
 	liberar_proceso();
@@ -410,6 +457,7 @@ Incluir la llamada que, entre otras labores, debe poner al proceso en estado
 bloqueado, reajustar las listas de BCPs correspondientes y realizar el cambio
 de contexto.
 */
+/*
 int sis_cambios(BCPptr actual){
 
 	
@@ -417,21 +465,26 @@ int sis_cambios(BCPptr actual){
 	p_proc_anterior=p_proc_actual;
 	p_proc_actual=planificador();
 
-	cambio_contexto(NULL, &(p_proc_actual->contexto_regs));
-        return 0; /* no debería llegar aqui */
+	//cambio_contexto(NULL, &(p_proc_actual->contexto_regs));
+        //return 0; 
+        // no debería llegar aqui 
 	
 	printk("-> C.CONTEXTO POR FIN: de %d a %d\n",
 			p_proc_anterior->id, p_proc_actual->id);
 
 	liberar_pila(p_proc_anterior->pila);
 	cambio_contexto(NULL, &(p_proc_actual->contexto_regs));
-        return 0; /* no debería llegar aqui */
+        return 0; // no debería llegar aqui 
 
 		
 
 }
+*/
 
 
+int obtener_id_pr(){
+	return p_proc_actual->id;
+}
 
 
 
@@ -499,6 +552,7 @@ int dormir(unsigned int segundos){
 
 	//Restauramos el nivel de interrupcion
 	fijar_nivel_int(n_interrupcion);
+	return 0;
 
 }
 
@@ -642,12 +696,13 @@ int crear_mutex(char *nombre, int tipo){
 		
 			
 			mutex_actual->estado = OCUPADO;
-			num_mut_total++;
+			mutex_actual->id_mut=num_mut_total++;
+			//num_mut_total++;
 
 
 			p_proc_actual->conj_descriptores[descriptor_resultado] = descriptor_hueco_mutex;
 
-			printf("DE puta madre %s", nombre);
+			printf("Mutex con nombre %s e id %d creado correctamente\n", nombre, mutex_actual->id_mut);
 
 			mutex_resultado = 1;
 	
@@ -862,7 +917,7 @@ int unlock(unsigned int mutexid){
 	}
 
 	mut->num_mut_bloqueos--;
-	printk("El mutex %s con id %d ha sido desbloqueado\n",mut->nombre,mut->id_mut);
+	printk("El mutex %s ha sido desbloqueado\n",mut->nombre);
 
 	if(mut->n_mut_espera >= 1){
 
@@ -892,7 +947,7 @@ int cerrar_mutex(unsigned int mutexid){
 	//si el id es menor que NUM MUT es que ✅
 	if(mut_id >= NUM_MUT){
 
-		printk("ERROR. ID de mutex %d fuera de rango.");
+		printk("ERROR. ID de mutex %d fuera de rango.\n");
 		fijar_nivel_int(n_interrupcion);
 		return -1;
 
@@ -925,7 +980,7 @@ int cerrar_mutex(unsigned int mutexid){
 	p_proc_actual->n_descriptores_usados--;
 	num_mut_total--;
 
-	printk("Cierre del mutex %s con id %d completado.\n",mut->nombre,mutexid);
+	printk("Cierre del mutex %s completado.\n",mut->nombre);
 
 	if(num_mut_total>=1) { //contador_lista_bloqueados_mutex
 
@@ -934,7 +989,7 @@ int cerrar_mutex(unsigned int mutexid){
 		p_proc_bloqueando->estado = LISTO;
 		eliminar_primero(&lista_bloqueados);
 		insertar_ultimo(&lista_listos,p_proc_bloqueando);
-		printk("Desbloqueo del mutex %s con id %d completado.",mut->nombre,mutexid);
+		printk("Desbloqueo del mutex %s \n",mut->nombre);
 
 
 	}
@@ -963,16 +1018,18 @@ int main(){
 	instal_man_int(INT_TERMINAL, int_terminal); 
 	instal_man_int(LLAM_SIS, tratar_llamsis); 
 	instal_man_int(INT_SW, int_sw); 
+	
 	/*Añadir a la rutina de interrupción la detección de si se cumple el plazo de
 	algún proceso dormido. Si es así, debe cambiarle de estado y reajustar las
 	listas correspondientes*/
-	instal_man_int(INT_PLAZO, int_plazo);
+	//instal_man_int(INT_PLAZO, int_plazo);
 
 	iniciar_cont_int();		/* inicia cont. interr. */
 	iniciar_cont_reloj(TICK);	/* fija frecuencia del reloj */
 	iniciar_cont_teclado();		/* inici cont. teclado */
 
 	iniciar_tabla_proc();		/* inicia BCPs de tabla de procesos */
+	iniciar_tabla_mut();            /* inicia la tabla de mutex */
 
 	/* crea proceso inicial */
 	if (crear_tarea((void *)"init")<0)
