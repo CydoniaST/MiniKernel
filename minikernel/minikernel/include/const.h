@@ -26,7 +26,6 @@
 
 #define TAM_PILA 32768
 
-
 /*
  * Posibles estados del proceso
  */
@@ -43,7 +42,9 @@
 #define LIBRE 1
 #define MUT_DESBLOQUEADO 0
 #define MUT_BLOQUEADO 1
-	
+
+
+
 /*
  * Niveles de ejecución del procesador. 
  */
@@ -59,7 +60,7 @@
  */
 
 /* Numero de vectores de interrupcion disponibles */
-#define NVECTORES 6
+#define NVECTORES 7
 
 /* Numeros de vector */
 #define EXC_ARITM 0     /* excepcion aritmetica */
@@ -68,6 +69,7 @@
 #define INT_TERMINAL 3  /* interrupcion de entrada de terminal */
 #define LLAM_SIS 4      /* vector usado para llamadas */
 #define INT_SW 5	/* vector usado para interrupciones software */
+#define INT_PLAZO
 
 /* frecuencia de reloj requerida (ticks/segundo) */
 #define TICK 100
@@ -88,4 +90,3 @@
 #define DIR_TERMINAL 1
 
 #endif /* _CONST_H */
-
