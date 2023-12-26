@@ -150,6 +150,7 @@ int dormir(unsigned int segundos);
 
 /*        SERVICIOS MUTEX        */
 int crear_mutex(char *nombre, int tipo);
+void iniciar_tabla_mut();
 
 //Funciones aux para crear_mutex: búsqueda por nombre y búsqueda de un hueco en el array de descriptores
 int buscar_mutex_nombre(char* nombre);
